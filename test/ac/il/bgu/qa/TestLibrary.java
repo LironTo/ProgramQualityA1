@@ -2,6 +2,9 @@ package ac.il.bgu.qa;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.Mock;
@@ -38,11 +41,18 @@ public class TestLibrary {
         Assertions.assertEquals("Invalid book.", thrown.getMessage());
         verify(mockDatabase, never()).addBook(anyString(), any(Book.class));
     }
-    @Test
-    public void givenInvalidISBN_whenAddBook_thenThrowIllegalArgumentException(){
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {
+            "123",                     // too short
+            "97803064A06157",          // contains a letter
+            "9780306406158",           // 13 digits, wrong check digit
+            "978-0-306-40615-X"        // hyphen + invalid character
+    })
+    public void givenInvalidISBN_whenAddBook_thenThrowIllegalArgumentException(String invalidISBN) {
         // Arrange
         Library library = new Library(mockDatabase, mockReviewService);
-        Book invalidBook = new Book(null, "123", "Some Author");
+        Book invalidBook = new Book(invalidISBN, "Some Title", "Some Author");
 
         // Act & Assert
         IllegalArgumentException thrown = Assertions.assertThrows(
@@ -147,6 +157,9 @@ public class TestLibrary {
         verify(mockDatabase, times(1)).getBookByISBN(validBook.getISBN());
         verify(mockDatabase, times(1)).addBook(validBook.getISBN(), validBook);
     }
+
+
+
 
 
 }
