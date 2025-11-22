@@ -90,24 +90,28 @@ public class TestLibrary {
         Assertions.assertEquals("Invalid title.", thrown.getMessage());
         verify(mockDatabase, never()).addBook(anyString(), any(Book.class));
     }
-    @Test
-    public void givenNullAuthor_whenAddBook_thenThrowIllegalArgumentException(){
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {
+        "",                 // empty
+        "1John",            // starts with number
+        "John2",            // ends with number
+        "John@Doe",         // contains invalid symbol
+        "John--Doe",        // consecutive hyphens
+        "O''Connor",        // consecutive apostrophes
+        ".John",            // starts with dot
+        "John.",            // ends with dot
+        "-Mary",            // starts with hyphen
+        "Mary-",            // ends with hyphen
+        "''Alice",          // starts with consecutive apostrophes
+        "Alice''",          // ends with consecutive apostrophes
+        "John_Doe",         // contains underscore (invalid)
+        "John#Doe"          // contains hash (invalid)
+})
+    public void givenInvalidAuthor_whenAddBook_thenThrowIllegalArgumentException(String invalidAuthor){
         // Arrange
         Library library = new Library(mockDatabase, mockReviewService);
-        Book validBook = new Book("123-456-789", "Some Title", null);
-        // Assert
-        IllegalArgumentException thrown = Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> library.addBook(validBook)
-        );
-        Assertions.assertEquals("Invalid author.", thrown.getMessage());
-        verify(mockDatabase, never()).addBook(anyString(), any(Book.class));
-    }
-    @Test
-    public void givenEmptyAuthor_whenAddBook_thenThrowIllegalArgumentException(){
-        // Arrange
-        Library library = new Library(mockDatabase, mockReviewService);
-        Book validBook = new Book("123-456-789", "Some Title", "");
+        Book validBook = new Book("9780306406157", "Some Title", invalidAuthor);
         // Assert
         IllegalArgumentException thrown = Assertions.assertThrows(
             IllegalArgumentException.class,
@@ -149,7 +153,7 @@ public class TestLibrary {
     public void givenValidBook_whenAddBook_thenAddBookToDatabase(){
         // Arrange
         Library library = new Library(mockDatabase, mockReviewService);
-        Book validBook = new Book("123-456-789", "Some Title", "Some Author");
+        Book validBook = new Book("9780306406157", "Some Title", "Some Author");
         when(mockDatabase.getBookByISBN(validBook.getISBN())).thenReturn(null);
         // Act
         library.addBook(validBook);
